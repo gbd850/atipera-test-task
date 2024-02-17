@@ -27,7 +27,6 @@ public class RepoControllerTest {
         ResultActions request = mvc.perform(
                 get(String.format("/api/repos/%s", username))
                         .accept(MediaType.APPLICATION_JSON)
-                        .header("X-GitHub-Api-Version", "2022-11-28")
         );
         // then
         request
