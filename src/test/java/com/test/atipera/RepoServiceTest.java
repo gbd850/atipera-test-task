@@ -4,20 +4,29 @@ import com.test.atipera.model.Repo;
 import com.test.atipera.service.RepoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.web.reactive.function.client.WebClient;
 
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SpringBootTest
 public class RepoServiceTest {
 
     private RepoService repoService;
 
+    @Autowired
+    private WebClient.Builder webClientBuilder;
+
     @BeforeEach
     void setUp() {
-        repoService = new RepoService();
+        repoService = new RepoService(webClientBuilder);
     }
 
     @Test
