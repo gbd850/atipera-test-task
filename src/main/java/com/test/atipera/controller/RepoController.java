@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/repos")
@@ -18,7 +19,7 @@ public class RepoController {
     private RepoService repoService;
 
     @GetMapping("{username}")
-    public ResponseEntity<List<Repo>> getUserRepositories(@PathVariable String username, @RequestHeader("Accept") String acceptHeader) {
+    public ResponseEntity<CompletableFuture<List<Repo>>> getUserRepositories(@PathVariable String username, @RequestHeader("Accept") String acceptHeader) {
         return new ResponseEntity<>(repoService.getUserRepositories(username, acceptHeader), HttpStatus.OK);
     }
 

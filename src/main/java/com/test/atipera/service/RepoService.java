@@ -4,10 +4,13 @@ import com.test.atipera.dto.BranchResponse;
 import com.test.atipera.dto.RepoResponse;
 import com.test.atipera.model.Branch;
 import com.test.atipera.model.Repo;
-import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -15,16 +18,31 @@ import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
-@AllArgsConstructor
 public class RepoService {
 
-    private WebClient.Builder webClientBuilder;
+    private static final Logger log = LoggerFactory.getLogger(RepoService.class);
 
-    public List<Repo> getUserRepositories(String username, String acceptHeader) {
-        RepoResponse[] res = webClientBuilder.build().get()
-                .uri(String.format("https://api.github.com/users/%s/repos", username))
+    @Value("${api.url}")
+    private String apiUrl;
+
+//    private WebClient webClient;
+//
+//    public RepoService() {
+//        this.webClient = WebClient.builder().baseUrl(apiUrl).build();
+//    }
+
+    @Async
+    public CompletableFuture<List<Repo>> getUserRepositories(String username, String acceptHeader) {
+
+        WebClient webClient = WebClient.builder().baseUrl(apiUrl).build();
+
+        log.info("getUserRepositories : {}", Thread.currentThread());
+
+        RepoResponse[] res = webClient.get()
+                .uri(String.format("/users/%s/repos", username))
                 .header(HttpHeaders.ACCEPT, acceptHeader)
                 .header("X-GitHub-Api-Version", "2022-11-28")
                 .retrieve()
@@ -45,17 +63,23 @@ public class RepoService {
 
         for (Repo repo : repos) {
 
-            List<Branch> branches = getRepoBranches(username, repo.getRepositoryName(), acceptHeader);
+            List<Branch> branches = getRepoBranches(username, repo.getRepositoryName(), acceptHeader).join();
 
             repo.setBranches(branches);
         }
 
-        return repos;
+        return CompletableFuture.completedFuture(repos);
     }
 
-    private List<Branch> getRepoBranches(String username, String repoName, String acceptHeader) {
-        BranchResponse[] branchResponseses = webClientBuilder.build().get()
-                .uri(String.format("https://api.github.com/repos/%s/%s/branches", username, repoName))
+    @Async
+    private CompletableFuture<List<Branch>> getRepoBranches(String username, String repoName, String acceptHeader) {
+
+        WebClient webClient = WebClient.builder().baseUrl(apiUrl).build();
+
+        log.info("getRepoBranches : {}", Thread.currentThread());
+
+        BranchResponse[] branchResponseses = webClient.get()
+                .uri(String.format("/repos/%s/%s/branches", username, repoName))
                 .header(HttpHeaders.ACCEPT, acceptHeader)
                 .header("X-GitHub-Api-Version", "2022-11-28")
                 .retrieve()
@@ -65,8 +89,8 @@ public class RepoService {
                 .bodyToMono(BranchResponse[].class)
                 .block();
 
-        return Arrays.stream(branchResponseses)
+        return CompletableFuture.completedFuture(Arrays.stream(branchResponseses)
                 .map(branch -> new Branch(branch.getName(), branch.getCommit().getSha()))
-                .toList();
+                .toList());
     }
 }
