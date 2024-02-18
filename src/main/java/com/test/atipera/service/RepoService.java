@@ -13,7 +13,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
 
 @Service
 @AllArgsConstructor
@@ -43,24 +44,29 @@ public class RepoService {
                 .toList();
 
         for (Repo repo : repos) {
-            BranchResponse[] branchResponseses = webClientBuilder.build().get()
-                    .uri(String.format("https://api.github.com/repos/%s/%s/branches", username, repo.getRepositoryName()))
-                    .header(HttpHeaders.ACCEPT, acceptHeader)
-                    .header("X-GitHub-Api-Version", "2022-11-28")
-                    .retrieve()
-                    .onStatus(HttpStatusCode::is4xxClientError, response ->
-                            Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND, "User with given username does not exist", null, null, null, null))
-                    )
-                    .bodyToMono(BranchResponse[].class)
-                    .block();
 
-            List<Branch> branches = Arrays.stream(branchResponseses)
-                    .map(branch -> new Branch(branch.getName(), branch.getCommit().getSha()))
-                    .toList();
+            List<Branch> branches = getRepoBranches(username, repo.getRepositoryName(), acceptHeader);
 
             repo.setBranches(branches);
         }
 
         return repos;
+    }
+
+    private List<Branch> getRepoBranches(String username, String repoName, String acceptHeader) {
+        BranchResponse[] branchResponseses = webClientBuilder.build().get()
+                .uri(String.format("https://api.github.com/repos/%s/%s/branches", username, repoName))
+                .header(HttpHeaders.ACCEPT, acceptHeader)
+                .header("X-GitHub-Api-Version", "2022-11-28")
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
+                        Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND, "User with given username does not exist", null, null, null, null))
+                )
+                .bodyToMono(BranchResponse[].class)
+                .block();
+
+        return Arrays.stream(branchResponseses)
+                .map(branch -> new Branch(branch.getName(), branch.getCommit().getSha()))
+                .toList();
     }
 }
