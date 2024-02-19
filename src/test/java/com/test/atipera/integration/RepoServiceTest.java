@@ -68,8 +68,8 @@ public class RepoServiceTest {
         assertThat(expected).isNotNull();
         assertThat(expected).isNotEmpty();
         assertThat(expected).hasOnlyElementsOfType(Repo.class);
-        assertThat(expected).allMatch(el -> el.getBranches() != null);
-        assertThat(expected).allMatch(el -> !el.getBranches().isEmpty());
+        assertThat(expected).allMatch(el -> el.branches() != null);
+        assertThat(expected).allMatch(el -> !el.branches().isEmpty());
     }
 
     @Test

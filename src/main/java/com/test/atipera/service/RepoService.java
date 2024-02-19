@@ -16,6 +16,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -52,17 +53,15 @@ public class RepoService {
         List<RepoResponse> reposResponse = Arrays.stream(res).filter(el -> !el.fork()).toList();
 
         List<Repo> repos = reposResponse.stream()
-                .map(el -> Repo.builder()
-                        .repositoryName(el.name())
-                        .ownerLogin(el.owner().login())
-                        .build())
+                .map(el -> new Repo(el.name(), el.owner().login(), new ArrayList<>()))
                 .toList();
 
         for (Repo repo : repos) {
 
-            List<Branch> branches = getRepoBranches(username, repo.getRepositoryName(), acceptHeader).join();
+            List<Branch> branches = getRepoBranches(username, repo.repositoryName(), acceptHeader).join();
 
-            repo.setBranches(branches);
+            repo.branches().clear();
+            repo.branches().addAll(branches);
         }
 
         return CompletableFuture.completedFuture(repos);
