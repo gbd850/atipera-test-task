@@ -5,20 +5,20 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.test.atipera.model.Repo;
 import com.test.atipera.service.RepoService;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import wiremock.org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,7 +48,7 @@ public class RepoServiceTest {
         stubFor(get(urlEqualTo("/users/" + username + "/repos"))
                 .willReturn(
                         aResponse()
-                                .withStatus(200)
+                                .withStatus(HttpStatus.OK.value())
                                 .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                                 .withBody(repoResponseBody)
                 )
@@ -57,7 +57,7 @@ public class RepoServiceTest {
         stubFor(get(urlMatching("\\/repos\\/.+\\/.+\\/branches"))
                 .willReturn(
                         aResponse()
-                                .withStatus(200)
+                                .withStatus(HttpStatus.OK.value())
                                 .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                                 .withBody(branchResponseBody)
                 )
@@ -83,16 +83,17 @@ public class RepoServiceTest {
                         aResponse()
                                 .withStatus(HttpStatus.NOT_FOUND.value())
                                 .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                                .withBody("{}")
                 )
         );
 
         // when
         // then
-        assertThatThrownBy(() -> repoService.getUserRepositories(username, acceptHeader))
-                .isInstanceOf(WebClientResponseException.class)
-                .hasFieldOrPropertyWithValue("statusCode", HttpStatus.NOT_FOUND)
-                .hasMessageContaining("User with given username does not exist");
+        assertThatThrownBy(() -> repoService.getUserRepositories(username, acceptHeader).get())
+                .isInstanceOf(ExecutionException.class)
+                .cause()
+                    .isInstanceOf(WebClientResponseException.class)
+                    .hasMessageContaining("User with given username does not exist")
+                    .hasFieldOrPropertyWithValue("statusCode", HttpStatus.NOT_FOUND);
     }
 
 }
