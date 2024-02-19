@@ -1,9 +1,9 @@
 package com.test.atipera.dto;
 
-import lombok.Data;
-
-@Data
-public class BranchResponse {
-    private String name;
-    private Commit commit;
+public record BranchResponse(
+        String name,
+        Commit commit
+) {
 }
+
+

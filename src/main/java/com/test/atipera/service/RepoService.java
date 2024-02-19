@@ -49,12 +49,12 @@ public class RepoService {
                 .bodyToMono(RepoResponse[].class)
                 .block();
 
-        List<RepoResponse> reposResponse = Arrays.stream(res).filter(el -> !el.getFork()).toList();
+        List<RepoResponse> reposResponse = Arrays.stream(res).filter(el -> !el.fork()).toList();
 
         List<Repo> repos = reposResponse.stream()
                 .map(el -> Repo.builder()
-                        .repositoryName(el.getName())
-                        .ownerLogin(el.getOwner().getLogin())
+                        .repositoryName(el.name())
+                        .ownerLogin(el.owner().login())
                         .build())
                 .toList();
 
@@ -85,7 +85,7 @@ public class RepoService {
                 .block();
 
         return CompletableFuture.completedFuture(Arrays.stream(branchResponses)
-                .map(branch -> new Branch(branch.getName(), branch.getCommit().getSha()))
+                .map(branch -> new Branch(branch.name(), branch.commit().sha()))
                 .toList());
     }
 }
