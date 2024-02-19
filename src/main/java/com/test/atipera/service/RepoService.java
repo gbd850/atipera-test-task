@@ -25,19 +25,16 @@ public class RepoService {
 
     private static final Logger log = LoggerFactory.getLogger(RepoService.class);
 
-    @Value("${api.url}")
     private String apiUrl;
 
-//    private WebClient webClient;
-//
-//    public RepoService() {
-//        this.webClient = WebClient.builder().baseUrl(apiUrl).build();
-//    }
+    private final WebClient webClient;
+
+    public RepoService(@Value("${api.url}") String apiUrl) {
+        this.webClient = WebClient.builder().baseUrl(apiUrl).build();
+    }
 
     @Async
     public CompletableFuture<List<Repo>> getUserRepositories(String username, String acceptHeader) {
-
-        WebClient webClient = WebClient.builder().baseUrl(apiUrl).build();
 
         log.info("getUserRepositories : {}", Thread.currentThread());
 
@@ -74,11 +71,9 @@ public class RepoService {
     @Async
     private CompletableFuture<List<Branch>> getRepoBranches(String username, String repoName, String acceptHeader) {
 
-        WebClient webClient = WebClient.builder().baseUrl(apiUrl).build();
-
         log.info("getRepoBranches : {}", Thread.currentThread());
 
-        BranchResponse[] branchResponseses = webClient.get()
+        BranchResponse[] branchResponses = webClient.get()
                 .uri(String.format("/repos/%s/%s/branches", username, repoName))
                 .header(HttpHeaders.ACCEPT, acceptHeader)
                 .header("X-GitHub-Api-Version", "2022-11-28")
@@ -89,7 +84,7 @@ public class RepoService {
                 .bodyToMono(BranchResponse[].class)
                 .block();
 
-        return CompletableFuture.completedFuture(Arrays.stream(branchResponseses)
+        return CompletableFuture.completedFuture(Arrays.stream(branchResponses)
                 .map(branch -> new Branch(branch.getName(), branch.getCommit().getSha()))
                 .toList());
     }
