@@ -1,6 +1,5 @@
 package com.test.atipera.integration;
 
-import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.test.atipera.model.Repo;
 import com.test.atipera.service.RepoService;
@@ -9,10 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.client.RestClientResponseException;
 import wiremock.org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
@@ -91,8 +89,9 @@ public class RepoServiceTest {
         assertThatThrownBy(() -> repoService.getUserRepositories(username, acceptHeader).get())
                 .isInstanceOf(ExecutionException.class)
                 .cause()
-                    .isInstanceOf(WebClientResponseException.class)
-                    .hasMessageContaining("User with given username does not exist")
+                    .isInstanceOf(RestClientResponseException.class)
+//                    .hasMessageContaining("User with given username does not exist")
+                    .hasMessage("User with given username does not exist")
                     .hasFieldOrPropertyWithValue("statusCode", HttpStatus.NOT_FOUND);
     }
 

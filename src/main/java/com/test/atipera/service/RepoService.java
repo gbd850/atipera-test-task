@@ -12,9 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
-import reactor.core.publisher.Mono;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,13 +24,11 @@ import java.util.concurrent.CompletableFuture;
 public class RepoService {
 
     private static final Logger log = LoggerFactory.getLogger(RepoService.class);
-
+    private final RestClient webClient;
     private String apiUrl;
 
-    private final WebClient webClient;
-
     public RepoService(@Value("${api.url}") String apiUrl) {
-        this.webClient = WebClient.builder().baseUrl(apiUrl).build();
+        this.webClient = RestClient.builder().baseUrl(apiUrl).build();
     }
 
     @Async
@@ -44,11 +41,18 @@ public class RepoService {
                 .header(HttpHeaders.ACCEPT, acceptHeader)
                 .header("X-GitHub-Api-Version", "2022-11-28")
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND, "User with given username does not exist", null, null, null, null))
+                .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
+                            throw new RestClientResponseException(
+                                    "User with given username does not exist",
+                                    HttpStatus.NOT_FOUND.value(),
+                                    HttpStatus.NOT_FOUND.name(),
+                                    null,
+                                    null,
+                                    null
+                            );
+                        }
                 )
-                .bodyToMono(RepoResponse[].class)
-                .block();
+                .body(RepoResponse[].class);
 
         List<RepoResponse> reposResponse = Arrays.stream(res).filter(el -> !el.fork()).toList();
 
@@ -77,11 +81,18 @@ public class RepoService {
                 .header(HttpHeaders.ACCEPT, acceptHeader)
                 .header("X-GitHub-Api-Version", "2022-11-28")
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        Mono.error(new WebClientResponseException(HttpStatus.NOT_FOUND, "User with given username does not exist", null, null, null, null))
+                .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
+                            throw new RestClientResponseException(
+                                    "User with given username does not exist",
+                                    HttpStatus.NOT_FOUND.value(),
+                                    HttpStatus.NOT_FOUND.name(),
+                                    null,
+                                    null,
+                                    null
+                            );
+                        }
                 )
-                .bodyToMono(BranchResponse[].class)
-                .block();
+                .body(BranchResponse[].class);
 
         return CompletableFuture.completedFuture(Arrays.stream(branchResponses)
                 .map(branch -> new Branch(branch.name(), branch.commit().sha()))
